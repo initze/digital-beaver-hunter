@@ -14,6 +14,7 @@ def run_inference(
     model: str,
     output_dir: str,
     imgsz: int = 2000,
+    device: int = 0
 ):
     """
     Run YOLO inference on a set of images and save the results.
@@ -28,6 +29,7 @@ def run_inference(
     model (str): Path to the YOLO model file.
     output_dir (str): Directory to save the output files.
     imgsz (int, optional): Input image size for the model. Defaults to 2000.
+    device (int, optional): cuda device for inference
 
     Returns:
     None
@@ -56,7 +58,7 @@ def run_inference(
     model = YOLO(model_path)
 
     # run prediction
-    results = model(source=str(image_dir), conf=confidence, verbose=True, imgsz=imgsz)
+    results = model(source=str(image_dir), conf=confidence, verbose=True, imgsz=imgsz, device=device)
 
     reslist = [get_results(res) for res in results]
     df_output = pd.concat(reslist).reset_index()
@@ -67,7 +69,7 @@ def run_inference(
 
     model.predictor.save_dir = save_dir_images
     for image in inference_images[:]:
-        results = model(source=image, conf=confidence, imgsz=imgsz, save=True)
+        results = model(source=image, conf=confidence, imgsz=imgsz, save=True, device=device)
 
     # check if reports dir exists
     if not save_dir.exists():
