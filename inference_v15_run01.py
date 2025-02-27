@@ -16,30 +16,35 @@ BASEDIR_VECTORS = "/isipd/projects/Response/Restricted_Airborne/MACS/Canada/2023
 VECTOR_SUFFIX = "footprints_full.shp"
 output_dir = Path(".") / "output/v15i.yolov5pytorch_yolov10x_scratch_finetune"
 CONFIDENCE = 0.1
-
+IMAGE_SIZE = 2016
 
 def run_project(
-    data_dir, project_name, model, output_dir, confidence=CONFIDENCE, env=""
+    data_dir, project_name, model, output_dir, confidence=0.1, device=0, env="", image_size=2016
 ):
-    if not Path(output_dir).exists():
-        os.makedirs(output_dir)
-    # run inference
-    run_inference(
-        data_dir=data_dir,
-        name=project_name,
-        model=model,
-        output_dir=output_dir,
-        confidence=confidence,
-        device=DEVICE
-    )
-    # run stats and documentation
-    process_stats_footprints(
-        name=project_name,
-        data_dir=output_dir,
-        base_dir_vectors=BASEDIR_VECTORS,
-        vector_suffix=VECTOR_SUFFIX,
-    )
-
+    try:
+        if not Path(output_dir).exists():
+            os.makedirs(output_dir)
+        # run inference
+        run_inference(
+            data_dir=data_dir,
+            name=project_name,
+            model=model,
+            output_dir=output_dir,
+            confidence=confidence,
+            device=device,
+            imgsz=image_size
+        )
+        # run stats and documentation
+        process_stats_footprints(
+            name=project_name,
+            data_dir=output_dir,
+            base_dir_vectors=BASEDIR_VECTORS,
+            vector_suffix=VECTOR_SUFFIX,
+        )
+    except Exception as e:
+        print(f"Error processing {project_name}: {e}")
+        return False
+    return True
 
 data_dir = BASEDIR / "data"
 dirlist = list(data_dir.glob("*"))
@@ -51,8 +56,8 @@ projects_run = [
 # print(projects_run)
 
 # run hardcoded only test area
-projects_run = ["20230712-000903_054_EnsomSumps_01_1000m"]
+projects_run = ["20230707-211202_[ - ]"]
 Parallel(n_jobs=N_JOBS)(
-    delayed(run_project)(data_dir, project, MODEL, output_dir, env=CUDA_ENV)
-    for project in tqdm(projects_run[:])
+    delayed(run_project)(data_dir, project, MODEL, output_dir, device=DEVICE, image_size=IMAGE_SIZE, confidence=CONFIDENCE)
+    for project in tqdm(projects_run[:20])
 )
