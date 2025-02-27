@@ -5,9 +5,28 @@ description = "Add your description here"
 authors = [
     { name = "initze", email = "ingmarnitze@gmail.com" }
 ]
-dependencies = []
+dependencies = [
+    "ultralytics",
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "setuptools",
+    "wheel",
+    "numpy",
+    "opencv-python",
+    "Pillow",
+    "pyyaml",
+    "requests",
+    # "scipy",
+    "tqdm",
+    "joblib>=1.4.2",
+    "geopandas>=1.0.1",
+    "leafmap>=0.42.11",
+    "rasterio>=1.4.3",
+    "typer>=0.15.1",
+]
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">= 3.11"
 
 [build-system]
 requires = ["hatchling"]
