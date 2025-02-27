@@ -24,6 +24,8 @@ dependencies = [
     "leafmap>=0.42.11",
     "rasterio>=1.4.3",
     "typer>=0.15.1",
+    "ipykernel>=6.29.5",
+    "jupyterlab>=4.3.5",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
