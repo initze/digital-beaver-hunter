@@ -3,17 +3,46 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+
 from digital_beaver_hunter.utils.geo import get_global_coords_from_yolo_output
+
 
 def process_stats_footprints(
     name: str, data_dir: str, base_dir_vectors: str, vector_suffix: str
 ):
+    """
+    Process statistics and footprints for a dataset, combining YOLO detection results with vector data.
+
+    This function loads YOLO detection results, combines them with vector footprints,
+    and produces various output files including vector data with detection statistics
+    and individual feature locations.
+
+    Parameters:
+    name (str): Name of the dataset.
+    data_dir (str): Directory containing the detection results.
+    base_dir_vectors (str): Base directory for vector files.
+    vector_suffix (str): Suffix for vector files.
+
+    Returns:
+    None
+
+    Outputs:
+    - A GeoPackage file with vector footprints and detection statistics.
+    - A GeoPackage file with centroids of the above.
+    - A GeoPackage file with individual feature locations in WGS84 (EPSG:4326).
+
+    Notes:
+    - Assumes detection results are stored in CSV files in the data_dir.
+    - Vector files are expected to have either a 'Basename' or 'Name' column.
+    - The function performs coordinate transformations and joins between vector and detection data.
+    - Output files are saved in the same directory as the input detection results.
+    """
     # setup paths
     ds_name = name
     save_dir = Path(data_dir) / ds_name
 
     # load inference results
-    
+
     # class counts
     df_class_count = pd.read_csv(save_dir / "detected_image_summary.csv")
     # single features
@@ -52,19 +81,20 @@ def process_stats_footprints(
     gdf_out_centroid.to_file(outfile_centroid)
 
     # make local boxes
-    
+
     # image ids with content
-    image_ids = df_features['image_id'].unique()
+    image_ids = df_features["image_id"].unique()
     # filter to relevant footprints
-    gdf_filtered_projected = gdf[gdf['image_id'].isin(image_ids)].to_crs(32608)
+    gdf_filtered_projected = gdf[gdf["image_id"].isin(image_ids)].to_crs(32608)
     # convert local to global coords
-    global_geoms = [get_global_coords_from_yolo_output(row, gdf_filtered_projected) for i, row in df_features.iterrows()]
-    
+    global_geoms = [
+        get_global_coords_from_yolo_output(row, gdf_filtered_projected)
+        for i, row in df_features.iterrows()
+    ]
+
     # create output feature gdf
     gdf_features = gpd.GeoDataFrame(
-    df_features,
-    geometry=global_geoms,
-    crs="EPSG:32608"
+        df_features, geometry=global_geoms, crs="EPSG:32608"
     ).to_crs(4326)
 
     features_outfile = save_dir / (ds_name + "_feature_locations.gpkg")
