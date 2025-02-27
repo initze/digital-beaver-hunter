@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 from ultralytics import YOLO
+from tqdm import tqdm
 
 from digital_beaver_hunter.utils.results import get_class_counts, get_results
 
@@ -56,11 +57,19 @@ def run_inference(
 
     # setup model
     model = YOLO(model_path)
-
-    # run prediction
-    results = model(source=str(image_dir), conf=confidence, verbose=True, imgsz=imgsz, device=device)
-
-    reslist = [get_results(res) for res in results]
+    image_dir = Path('/isipd/projects-noreplica/p_initze/yolov8_object_detection/data/20230707-211202_[ - ]')
+    
+    # check if image dir contains spaces, if yes it needs single image inference
+    if ' ' in image_dir.name: 
+        images = list(image_dir.glob('*.jpg'))[:]
+        reslist = []
+        for image in tqdm(images):
+            result = model(source=image, conf=confidence, verbose=False, imgsz=imgsz, device=device)[0]
+            reslist.append(pd.DataFrame(get_results(result)))
+    else:
+        # run prediction regular case
+        results = model(source=str(image_dir), conf=confidence, verbose=True, imgsz=imgsz, device=device)
+        reslist = [get_results(res) for res in results]
     df_output = pd.concat(reslist).reset_index()
 
     df_class_count = get_class_counts(df_output, image_list=image_list)
@@ -68,8 +77,10 @@ def run_inference(
     inference_images = df_output["image_path"].unique()
 
     model.predictor.save_dir = save_dir_images
-    for image in inference_images[:]:
-        results = model(source=image, conf=confidence, imgsz=imgsz, save=True, device=device)
+    
+    # results = model(source=inference_images, conf=confidence, imgsz=imgsz, save=True, device=device)
+    for image in tqdm(inference_images[:]):
+        results = model(source=image, conf=confidence, imgsz=imgsz, save=True, device=device, verbose=False)
 
     # check if reports dir exists
     if not save_dir.exists():
