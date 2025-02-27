@@ -57,7 +57,7 @@ def run_inference(
 
     # setup model
     model = YOLO(model_path)
-    image_dir = Path('/isipd/projects-noreplica/p_initze/yolov8_object_detection/data/20230707-211202_[ - ]')
+    # image_dir = Path('/isipd/projects-noreplica/p_initze/yolov8_object_detection/data/20230707-211202_[ - ]')
     
     # check if image dir contains spaces, if yes it needs single image inference
     if ' ' in image_dir.name: 
