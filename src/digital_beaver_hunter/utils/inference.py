@@ -7,7 +7,42 @@ from ultralytics import YOLO
 from digital_beaver_hunter.utils.results import get_class_counts, get_results
 
 
-def run_inference(data_dir: str, name: str, confidence: float, model: str, output_dir: str, imgsz: int=2000):
+def run_inference(
+    data_dir: str,
+    name: str,
+    confidence: float,
+    model: str,
+    output_dir: str,
+    imgsz: int = 2000,
+):
+    """
+    Run YOLO inference on a set of images and save the results.
+
+    This function performs object detection using a YOLO model on images in a specified directory,
+    and saves the detection results and summary statistics.
+
+    Parameters:
+    data_dir (str): Directory containing the input images.
+    name (str): Name of the project or dataset.
+    confidence (float): Confidence threshold for object detection.
+    model (str): Path to the YOLO model file.
+    output_dir (str): Directory to save the output files.
+    imgsz (int, optional): Input image size for the model. Defaults to 2000.
+
+    Returns:
+    None
+
+    Outputs:
+    - CSV and HTML files with detailed detection results for each image.
+    - CSV and HTML files with summary statistics of detected objects per image.
+    - Annotated images with detected objects.
+
+    Notes:
+    - Assumes input images are in JPG format.
+    - Uses the YOLO model from the ultralytics package.
+    - Saves both detailed results and summary statistics.
+    - Creates output directories if they don't exist.
+    """
     # setup images
     project_name = name
     image_dir = Path(data_dir) / project_name
