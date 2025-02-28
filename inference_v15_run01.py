@@ -70,6 +70,9 @@ def main(
     n_datasets: Optional[int] = typer.Option(
         None, help="Number of datasets to process (optional)"
     ),
+    filter_startswith: Optional[str] = typer.Option(
+    None, help="Filter projects that start with this string (optional)"
+    ),
 ):
     data_dir = basedir_data
     dirlist = list(data_dir.glob("*"))
@@ -78,11 +81,11 @@ def main(
     if projects_to_run:
         projects_run = projects_to_run
     else:
-        projects_run = [
-            p
-            for p in projects
-            if not (output_dir / p).exists() and p.startswith("2023")
-        ]
+        # check if dir exists
+        projects_run = [p for p in projects if not (output_dir / p).exists()]
+        # Then, apply the filter_startswith if it's not None
+        if filter_startswith is not None:
+            projects_run = [p for p in projects_run if p.startswith(filter_startswith)]
 
     if n_datasets is not None:
         projects_run = projects_run[:n_datasets]
