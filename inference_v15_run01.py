@@ -5,6 +5,7 @@ from typing import List, Optional
 import typer
 from joblib import Parallel, delayed
 from tqdm import tqdm
+from typer_config.decorators import use_yaml_config
 
 from digital_beaver_hunter.utils.inference import run_inference
 from digital_beaver_hunter.utils.postprocessing import process_stats_footprints
@@ -50,6 +51,7 @@ def run_project(
 
 
 @app.command()
+@use_yaml_config()
 def main(
     basedir_data: Path = typer.Option(..., help="Base directory for the project"),
     model: Path = typer.Option(..., help="Path to the model file"),
@@ -77,7 +79,8 @@ def main(
         projects_run = projects_to_run
     else:
         projects_run = [
-            p for p in projects
+            p
+            for p in projects
             if not (output_dir / p).exists() and p.startswith("2023")
         ]
 
