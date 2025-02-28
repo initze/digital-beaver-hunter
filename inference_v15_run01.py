@@ -1,28 +1,30 @@
 import os
 from pathlib import Path
+from typing import List, Optional
 
+import typer
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
 from digital_beaver_hunter.utils.inference import run_inference
 from digital_beaver_hunter.utils.postprocessing import process_stats_footprints
 
-BASEDIR = Path("/isipd/projects-noreplica/p_initze/yolov8_object_detection")
-MODEL = BASEDIR / "models/v15i.yolov5pytorch_yolov10x_scratch_finetune.pt"
-N_JOBS = 4
-CUDA_ENV = "CUDA_VISIBLE_DEVICES='6'"
-DEVICE = 6
-BASEDIR_VECTORS = "/isipd/projects/Response/Restricted_Airborne/MACS/Canada/2023_Perma-X_Canada/1_MACS_original_images"
-VECTOR_SUFFIX = "footprints_full.shp"
-output_dir = Path(".") / "output/v15i.yolov5pytorch_yolov10x_scratch_finetune"
-CONFIDENCE = 0.1
-IMAGE_SIZE = 2016
+app = typer.Typer()
+
 
 def run_project(
-    data_dir, project_name, model, output_dir, confidence=0.1, device=0, env="", image_size=2016
-):
+    data_dir: Path,
+    project_name: str,
+    model: Path,
+    output_dir: Path,
+    confidence: float,
+    device: int,
+    basedir_vectors: str,
+    vector_suffix: str,
+    image_size: int,
+) -> bool:
     try:
-        if not Path(output_dir).exists():
+        if not output_dir.exists():
             os.makedirs(output_dir)
         # run inference
         run_inference(
@@ -32,32 +34,73 @@ def run_project(
             output_dir=output_dir,
             confidence=confidence,
             device=device,
-            imgsz=image_size
+            imgsz=image_size,
         )
         # run stats and documentation
         process_stats_footprints(
             name=project_name,
             data_dir=output_dir,
-            base_dir_vectors=BASEDIR_VECTORS,
-            vector_suffix=VECTOR_SUFFIX,
+            base_dir_vectors=basedir_vectors,
+            vector_suffix=vector_suffix,
         )
     except Exception as e:
         print(f"Error processing {project_name}: {e}")
         return False
     return True
 
-data_dir = BASEDIR / "data"
-dirlist = list(data_dir.glob("*"))
-projects = [d.name for d in dirlist if d.is_dir()]
 
-projects_run = [
-    p for p in projects[:] if not (Path(output_dir) / p).exists() and " " not in p
-]
-# print(projects_run)
+@app.command()
+def main(
+    basedir_data: Path = typer.Option(..., help="Base directory for the project"),
+    model: Path = typer.Option(..., help="Path to the model file"),
+    n_jobs: int = typer.Option(8, help="Number of parallel jobs"),
+    device: int = typer.Option(6, help="Device number for inference"),
+    basedir_vectors: str = typer.Option(..., help="Base directory for vector files"),
+    vector_suffix: str = typer.Option(
+        "footprints_full.shp", help="Suffix for vector files"
+    ),
+    output_dir: Path = typer.Option(Path(".") / "output", help="Output directory"),
+    confidence: float = typer.Option(0.1, help="Confidence threshold"),
+    image_size: int = typer.Option(2016, help="Image size for inference"),
+    projects_to_run: Optional[List[str]] = typer.Option(
+        None, help="List of projects to run (optional)"
+    ),
+    n_datasets: Optional[int] = typer.Option(
+        None, help="Number of datasets to process (optional)"
+    ),
+):
+    data_dir = basedir_data
+    dirlist = list(data_dir.glob("*"))
+    projects = [d.name for d in dirlist if d.is_dir()]
 
-# run hardcoded only test area
-projects_run = ["20230707-211202_[ - ]"]
-Parallel(n_jobs=N_JOBS)(
-    delayed(run_project)(data_dir, project, MODEL, output_dir, device=DEVICE, image_size=IMAGE_SIZE, confidence=CONFIDENCE)
-    for project in tqdm(projects_run[:20])
-)
+    if projects_to_run:
+        projects_run = projects_to_run
+    else:
+        projects_run = [
+            p for p in projects
+            if not (output_dir / p).exists() and p.startswith("2023")
+        ]
+
+    if n_datasets is not None:
+        projects_run = projects_run[:n_datasets]
+
+    print("Projects to run:", projects_run)
+
+    Parallel(n_jobs=n_jobs)(
+        delayed(run_project)(
+            data_dir,
+            project,
+            model,
+            output_dir / model.stem,
+            confidence,
+            device,
+            basedir_vectors,
+            vector_suffix,
+            image_size,
+        )
+        for project in tqdm(projects_run)
+    )
+
+
+if __name__ == "__main__":
+    app()
