@@ -4,7 +4,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from digital_beaver_hunter.utils.geo import get_global_coords_from_yolo_output
+from digital_beaver_hunter.utils.geo import get_global_coords_from_yolo_output, get_best_utm_epsg
 
 
 def process_stats_footprints(
@@ -84,8 +84,10 @@ def process_stats_footprints(
 
     # image ids with content
     image_ids = df_features["image_id"].unique()
+    # find local utm zone
+    epsg = get_best_utm_epsg(gdf)
     # filter to relevant footprints
-    gdf_filtered_projected = gdf[gdf["image_id"].isin(image_ids)].to_crs(32608)
+    gdf_filtered_projected = gdf[gdf["image_id"].isin(image_ids)].to_crs(epsg)
     # convert local to global coords
     global_geoms = [
         get_global_coords_from_yolo_output(row, gdf_filtered_projected)
@@ -94,7 +96,7 @@ def process_stats_footprints(
 
     # create output feature gdf
     gdf_features = gpd.GeoDataFrame(
-        df_features, geometry=global_geoms, crs="EPSG:32608"
+        df_features, geometry=global_geoms, crs=f"EPSG:{epsg}"
     ).to_crs(4326)
 
     features_outfile = save_dir / (ds_name + "_feature_locations.gpkg")
