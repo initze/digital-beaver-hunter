@@ -23,6 +23,7 @@ def run_project(
     basedir_vectors: str,
     vector_suffix: str,
     image_size: int,
+    classes: Optional[List[int]],  # New parameter
 ) -> bool:
     try:
         if not output_dir.exists():
@@ -36,6 +37,7 @@ def run_project(
             confidence=confidence,
             device=device,
             imgsz=image_size,
+            classes=classes,  # Add classes parameter
         )
         # run stats and documentation
         process_stats_footprints(
@@ -71,8 +73,11 @@ def main(
         None, help="Number of datasets to process (optional)"
     ),
     filter_startswith: Optional[str] = typer.Option(
-    None, help="Filter projects that start with this string (optional)"
+        None, help="Filter projects that start with this string (optional)"
     ),
+    classes: Optional[List[int]] = typer.Option(
+        None, help="List of class IDs to detect (optional)"
+    ),  # New parameter
 ):
     data_dir = basedir_data
     dirlist = list(data_dir.glob("*"))
@@ -103,6 +108,7 @@ def main(
             basedir_vectors,
             vector_suffix,
             image_size,
+            classes,  # Add classes parameter
         )
         for project in tqdm(projects_run)
     )
