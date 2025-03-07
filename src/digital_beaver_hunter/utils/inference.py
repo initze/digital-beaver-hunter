@@ -15,7 +15,8 @@ def run_inference(
     model: str,
     output_dir: str,
     imgsz: int = 2000,
-    device: int = 0
+    device: int = 0,
+    classes: list = None
 ):
     """
     Run YOLO inference on a set of images and save the results.
@@ -64,11 +65,11 @@ def run_inference(
         images = list(image_dir.glob('*.jpg'))[:]
         reslist = []
         for image in tqdm(images):
-            result = model(source=image, conf=confidence, verbose=False, imgsz=imgsz, device=device)[0]
+            result = model(source=image, conf=confidence, verbose=False, imgsz=imgsz, device=device, classes=classes)[0]
             reslist.append(pd.DataFrame(get_results(result)))
     else:
         # run prediction regular case
-        results = model(source=str(image_dir), conf=confidence, verbose=True, imgsz=imgsz, device=device)
+        results = model(source=str(image_dir), conf=confidence, verbose=True, imgsz=imgsz, device=device, classes=classes)
         reslist = [get_results(res) for res in results]
     df_output = pd.concat(reslist).reset_index()
 
@@ -77,10 +78,9 @@ def run_inference(
     inference_images = df_output["image_path"].unique()
 
     model.predictor.save_dir = save_dir_images
-    
-    # results = model(source=inference_images, conf=confidence, imgsz=imgsz, save=True, device=device)
+
     for image in tqdm(inference_images[:]):
-        results = model(source=image, conf=confidence, imgsz=imgsz, save=True, device=device, verbose=False)
+        results = model(source=image, conf=confidence, imgsz=imgsz, save=True, device=device, verbose=False, classes=classes)
 
     # check if reports dir exists
     if not save_dir.exists():
