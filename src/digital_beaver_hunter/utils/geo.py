@@ -1,5 +1,6 @@
 import numpy as np
 from shapely.geometry import Polygon
+import geopandas as gpd
 
 
 def yolo_to_projected_polygon(image_coords, yolo_coords):
@@ -89,3 +90,34 @@ def get_global_coords_from_yolo_output(row, gdf_images):
     image_coords = list(dict.fromkeys(row_image.geometry.exterior.coords))[:4]
     geom_out = yolo_to_projected_polygon(image_coords, yolo_coords)
     return geom_out
+
+
+def get_best_utm_epsg(gdf):
+    """
+    Determine the best UTM zone EPSG code for a GeoDataFrame in EPSG:4326.
+
+    Parameters:
+        gdf (geopandas.GeoDataFrame): A GeoDataFrame with a CRS of EPSG:4326.
+
+    Returns:
+        int: The EPSG code for the best matching UTM zone.
+    """
+    # Ensure the GeoDataFrame is in EPSG:4326
+    if gdf.crs.to_epsg() != 4326:
+        raise ValueError("GeoDataFrame must be in EPSG:4326 projection.")
+    
+    # Calculate the centroid of the bounding box
+    bbox = gdf.total_bounds  # [minx, miny, maxx, maxy]
+    centroid_lon = (bbox[0] + bbox[2]) / 2  # Average longitude
+    centroid_lat = (bbox[1] + bbox[3]) / 2  # Average latitude
+
+    # Determine UTM zone based on longitude
+    utm_zone = int((centroid_lon + 180) // 6) + 1
+
+    # Determine if it's northern or southern hemisphere
+    if centroid_lat >= 0:
+        epsg_code = 32600 + utm_zone  # Northern hemisphere
+    else:
+        epsg_code = 32700 + utm_zone  # Southern hemisphere
+
+    return epsg_code
