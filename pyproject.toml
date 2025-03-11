@@ -46,4 +46,4 @@ allow-direct-references = true
 packages = ["src/digital_beaver_hunter"]
 
 [project.scripts]
-dbh_inference = "digital_beaver_hunter.scripts.inference:main"
+dbh_inference = "digital_beaver_hunter.scripts.inference:app"
