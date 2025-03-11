@@ -1,79 +1,8 @@
-import numpy as np
-from shapely.geometry import Polygon
+from math import cos, radians, sin
 
 import numpy as np
 from shapely.geometry import Polygon
-from math import radians, sin, cos
-
-def order_rectangle_corners(polygon, yaw):
-    """
-    Order the corners of a rectangle polygon based on flight direction (yaw).
-    
-    Parameters:
-    polygon (shapely.geometry.Polygon): Rectangle polygon in EPSG:4326 with 5 vertices
-    yaw (float): Yaw angle in degrees, representing flight direction
-    
-    Returns:
-    shapely.geometry.Polygon: New polygon with ordered corners 
-    [upper left, upper right, lower right, lower left]
-    """
-    # Extract coordinates, removing the last (duplicate) point
-    coords = np.array(list(polygon.exterior.coords)[:-1])
-    
-    # Handle 3D coordinates by taking only the first two dimensions (lat/lon)
-    if coords.shape[1] == 3:
-        coords_2d = coords[:, :2]
-        has_z = True
-    else:
-        coords_2d = coords
-        has_z = False
-    
-    # Calculate centroid
-    centroid = np.mean(coords_2d, axis=0)
-    
-    # Convert yaw to radians
-    yaw_rad = radians(yaw)
-    
-    # Create rotation matrix for -90 degrees from yaw (to get "up" direction)
-    rotation_matrix = np.array([
-        [cos(yaw_rad - np.pi/2), -sin(yaw_rad - np.pi/2)],
-        [sin(yaw_rad - np.pi/2), cos(yaw_rad - np.pi/2)]
-    ])
-    
-    # Function to rotate point around centroid
-    def rotate_point(point):
-        vector = point - centroid
-        rotated = np.dot(rotation_matrix, vector)
-        return rotated[1]  # Return y-coordinate after rotation
-    
-    # Sort points based on rotated y-coordinate (highest first)
-    sorted_coords = sorted(coords_2d, key=rotate_point, reverse=True)
-    
-    # Separate upper and lower points
-    upper = sorted_coords[:2]
-    lower = sorted_coords[2:]
-    
-    # Sort upper points from left to right
-    upper.sort(key=lambda p: p[0])
-    
-    # Sort lower points from left to right
-    lower.sort(key=lambda p: p[0])
-    
-    # Combine in the desired order: upper left, upper right, lower right, lower left
-    ordered_corners = [upper[0], upper[1], lower[1], lower[0]]
-    
-    # If original had Z coordinates, add them back (using the original Z values)
-    if has_z:
-        z_values = coords[:, 2]
-        ordered_corners_3d = [
-            (corner[0], corner[1], z_values[np.where((coords[:, :2] == corner).all(axis=1))[0][0]])
-            for corner in ordered_corners
-        ]
-        # Create new polygon with ordered corners (including Z)
-        return Polygon(ordered_corners_3d + [ordered_corners_3d[0]])
-    else:
-        # Create new polygon with ordered corners
-        return Polygon(ordered_corners + [ordered_corners[0]])
+from digital_beaver_hunter.utils.geom import sort_vertices
 
 
 def yolo_to_projected_polygon(image_coords, yolo_coords):
@@ -150,10 +79,8 @@ def get_global_coords_from_yolo_output(row, gdf_images):
 
     yolo_coords = row[["x", "y", "height", "width"]].values
     row_image = gdf_images.set_index("image_id").loc[row["image_id"]]
-    image_coords = list(dict.fromkeys(row_image.geometry.exterior.coords))[:4]
-    geom_out = yolo_to_projected_polygon(
-        image_coords, yolo_coords
-    )
+    image_coords = list(dict.fromkeys(row_image.geometry.exterior.coords))[:]
+    geom_out = yolo_to_projected_polygon(image_coords, yolo_coords)
     return geom_out
 
 
