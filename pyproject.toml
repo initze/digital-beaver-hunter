@@ -1,6 +1,6 @@
 [project]
 name = "digital-beaver-hunter"
-version = "0.1.0"
+version = "0.1.1"
 description = "Add your description here"
 authors = [
     { name = "initze", email = "ingmarnitze@gmail.com" }
@@ -44,3 +44,6 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/digital_beaver_hunter"]
+
+[project.scripts]
+dbh_inference = "digital_beaver_hunter.scripts.inference:main"
