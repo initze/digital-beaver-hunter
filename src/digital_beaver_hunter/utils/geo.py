@@ -1,41 +1,33 @@
+from math import cos, radians, sin
+
 import numpy as np
 from shapely.geometry import Polygon
-import geopandas as gpd
+from digital_beaver_hunter.utils.geom import sort_vertices
 
 
 def yolo_to_projected_polygon(image_coords, yolo_coords):
     """
-    Convert YOLO format bounding box coordinates to a projected polygon.
-
-    This function takes the coordinates of an image's corners in a projected
-    coordinate system and a bounding box in YOLO format, and returns a Shapely
-    Polygon representing the bounding box in the projected coordinate system.
+    Convert YOLO format bounding box coordinates to a projected polygon, considering yaw.
 
     Parameters:
     image_coords (list of tuples): List of 4 tuples representing the coordinates
-                                   of the image corners in the order:
-                                   (lower-left, upper-left, upper-right, lower-right)
+                                   of the image corners in UTM projection,
+                                   in order: upper left, upper right, lower right, lower left.
     yolo_coords (tuple): Tuple containing the YOLO format bounding box coordinates
                          in the order: (x_center, y_center, width, height)
                          These should be normalized values between 0 and 1.
+    yaw (float): Yaw angle in degrees, representing the flight direction (not used in this version).
 
     Returns:
     shapely.geometry.Polygon: A Polygon representing the bounding box in the
                               projected coordinate system.
-
-    Note:
-    - The input image_coords should be in a projected coordinate system.
-    - The YOLO coordinates are assumed to be normalized (0 to 1).
-    - The function assumes the image is not rotated in the projected space.
     """
-    # Extract image coordinates
-    ll, ul, ur, lr = image_coords[
-        :4
-    ]  # lower-left, upper-left, upper-right, lower-right
+    # Unpack image coordinates
+    ul, ur, lr, ll = image_coords
 
     # Create vectors for width and height of the image in projected space
-    width_vector = np.array(ur) - np.array(ul)
-    height_vector = np.array(ll) - np.array(ul)
+    width_vector = np.array(ur) - np.array(ul)  # Vector from UL to UR (image width)
+    height_vector = np.array(ll) - np.array(ul)  # Vector from UL to LL (image height)
 
     # Extract YOLO coordinates (normalized)
     x_center, y_center, width, height = yolo_coords
@@ -87,7 +79,7 @@ def get_global_coords_from_yolo_output(row, gdf_images):
 
     yolo_coords = row[["x", "y", "height", "width"]].values
     row_image = gdf_images.set_index("image_id").loc[row["image_id"]]
-    image_coords = list(dict.fromkeys(row_image.geometry.exterior.coords))[:4]
+    image_coords = list(dict.fromkeys(row_image.geometry.exterior.coords))[:]
     geom_out = yolo_to_projected_polygon(image_coords, yolo_coords)
     return geom_out
 
@@ -105,7 +97,7 @@ def get_best_utm_epsg(gdf):
     # Ensure the GeoDataFrame is in EPSG:4326
     if gdf.crs.to_epsg() != 4326:
         raise ValueError("GeoDataFrame must be in EPSG:4326 projection.")
-    
+
     # Calculate the centroid of the bounding box
     bbox = gdf.total_bounds  # [minx, miny, maxx, maxy]
     centroid_lon = (bbox[0] + bbox[2]) / 2  # Average longitude
