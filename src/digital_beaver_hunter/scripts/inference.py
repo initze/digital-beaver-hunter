@@ -87,11 +87,12 @@ def main(
         projects_run = projects_to_run
     else:
         # check if dir exists
-        projects_run = [p for p in projects if not (output_dir / p).exists()]
+        projects_run = [p for p in projects if not (output_dir / model.stem / p).exists()]
         # Then, apply the filter_startswith if it's not None
         if filter_startswith is not None:
             projects_run = [p for p in projects_run if p.startswith(filter_startswith)]
-
+    
+    # filter to fixed number of projects
     if n_datasets is not None:
         projects_run = projects_run[:n_datasets]
 

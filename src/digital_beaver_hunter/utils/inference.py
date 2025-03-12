@@ -58,19 +58,14 @@ def run_inference(
 
     # setup model
     model = YOLO(model_path)
-    # image_dir = Path('/isipd/projects-noreplica/p_initze/yolov8_object_detection/data/20230707-211202_[ - ]')
     
-    # check if image dir contains spaces, if yes it needs single image inference
-    if ' ' in image_dir.name: 
-        images = list(image_dir.glob('*.jpg'))[:]
-        reslist = []
-        for image in tqdm(images):
-            result = model(source=image, conf=confidence, verbose=False, imgsz=imgsz, device=device, classes=classes)[0]
-            reslist.append(pd.DataFrame(get_results(result)))
-    else:
-        # run prediction regular case
-        results = model(source=str(image_dir), conf=confidence, verbose=True, imgsz=imgsz, device=device, classes=classes)
-        reslist = [get_results(res) for res in results]
+    # run prediction
+    images = list(image_dir.glob('*.jpg'))[:]
+    reslist = []
+    for image in tqdm(images):
+        result = model(source=image, conf=confidence, verbose=False, imgsz=imgsz, device=device, classes=classes)[0]
+        reslist.append(pd.DataFrame(get_results(result)))
+    
     df_output = pd.concat(reslist).reset_index()
 
     df_class_count = get_class_counts(df_output, image_list=image_list)
