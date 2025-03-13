@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import List, Optional
+import logging
 
 import typer
 from joblib import Parallel, delayed
@@ -12,6 +13,9 @@ from digital_beaver_hunter.utils.postprocessing import process_stats_footprints
 
 app = typer.Typer()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def run_project(
     data_dir: Path,
@@ -24,12 +28,15 @@ def run_project(
     vector_suffix: str,
     image_size: int,
     classes: Optional[List[int]],  # New parameter
+    logger: Optional[logging.Logger] = None  # New parameter
 ) -> bool:
     try:
         if not output_dir.exists():
             os.makedirs(output_dir)
-        # run inference
-        run_inference(
+        # Run inference
+        if logger:
+            logger.info(f"Running inference for project: {project_name}")
+        inference_complete = run_inference(
             data_dir=data_dir,
             name=project_name,
             model=model,
@@ -38,16 +45,28 @@ def run_project(
             device=device,
             imgsz=image_size,
             classes=classes,  # Add classes parameter
+            logger=logger,
         )
-        # run stats and documentation
+        
+        # check if first step was correctly finished
+        if not inference_complete:
+            if logger:
+                logger.info(f"Processing of inference failed!: {project_name}")
+            return False
+        # Run stats and documentation
+        if logger:
+            logger.info(f"Processing stats and documentation for project: {project_name}")
         process_stats_footprints(
             name=project_name,
             data_dir=output_dir,
             base_dir_vectors=basedir_vectors,
             vector_suffix=vector_suffix,
         )
+        if logger:
+            logger.info(f"Completed processing for project: {project_name}")
     except Exception as e:
-        print(f"Error processing {project_name}: {e}")
+        if logger:
+            logger.error(f"Error processing {project_name}: {e}")
         return False
     return True
 
@@ -78,6 +97,9 @@ def main(
     classes: Optional[List[int]] = typer.Option(
         None, help="List of class IDs to detect (optional)"
     ),  # New parameter
+    logfile: Path = typer.Option(
+        Path("logs/app.log"), help="Path to the log file (optional)"
+    ),
 ):
     data_dir = basedir_data
     dirlist = list(data_dir.glob("*"))
@@ -86,17 +108,23 @@ def main(
     if projects_to_run:
         projects_run = projects_to_run
     else:
-        # check if dir exists
+        # Check if dir exists
         projects_run = [p for p in projects if not (output_dir / model.stem / p).exists()]
         # Then, apply the filter_startswith if it's not None
         if filter_startswith is not None:
             projects_run = [p for p in projects_run if p.startswith(filter_startswith)]
     
-    # filter to fixed number of projects
+    # Filter to fixed number of projects
     if n_datasets is not None:
         projects_run = projects_run[:n_datasets]
 
-    print("Projects to run:", projects_run)
+    if logger:
+        logger.info(f"Projects to run: {projects_run}")
+
+    # Add file handler to logger
+    file_handler = logging.FileHandler(logfile)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logger.addHandler(file_handler)
 
     Parallel(n_jobs=n_jobs)(
         delayed(run_project)(
@@ -109,10 +137,14 @@ def main(
             basedir_vectors,
             vector_suffix,
             image_size,
-            classes,  # Add classes parameter
+            classes,
+            logger=logger,  # Add classes parameter
         )
         for project in tqdm(projects_run)
     )
+
+    # Remove file handler from logger
+    logger.removeHandler(file_handler)
 
 
 if __name__ == "__main__":
