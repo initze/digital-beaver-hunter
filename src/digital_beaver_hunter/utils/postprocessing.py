@@ -108,3 +108,5 @@ def process_stats_footprints(
 
     features_outfile = save_dir / (ds_name + "_feature_locations.gpkg")
     gdf_features.to_file(features_outfile)
+
+    return True
