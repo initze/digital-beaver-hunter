@@ -1,12 +1,14 @@
+import logging
 import os
+import shutil
 from pathlib import Path
 from typing import List, Optional
-import logging
 
 import typer
 from joblib import Parallel, delayed
 from tqdm import tqdm
 from typer_config.decorators import use_yaml_config
+from typing_extensions import Annotated
 
 from digital_beaver_hunter.utils.inference import run_inference
 from digital_beaver_hunter.utils.postprocessing import process_stats_footprints
@@ -14,8 +16,11 @@ from digital_beaver_hunter.utils.postprocessing import process_stats_footprints
 app = typer.Typer()
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
+
 
 def run_project(
     data_dir: Path,
@@ -28,7 +33,8 @@ def run_project(
     vector_suffix: str,
     image_size: int,
     classes: Optional[List[int]],  # New parameter
-    logger: Optional[logging.Logger] = None  # New parameter
+    logger: Optional[logging.Logger] = None,  # New parameter
+    delete_input: bool = False,  # New parameter
 ) -> bool:
     try:
         if not output_dir.exists():
@@ -47,7 +53,7 @@ def run_project(
             classes=classes,  # Add classes parameter
             logger=logger,
         )
-        
+
         # check if first step was correctly finished
         if not inference_complete:
             if logger:
@@ -55,8 +61,10 @@ def run_project(
             return False
         # Run stats and documentation
         if logger:
-            logger.info(f"Processing stats and documentation for project: {project_name}")
-        process_stats_footprints(
+            logger.info(
+                f"Processing stats and documentation for project: {project_name}"
+            )
+        footprints_complete = process_stats_footprints(
             name=project_name,
             data_dir=output_dir,
             base_dir_vectors=basedir_vectors,
@@ -68,6 +76,29 @@ def run_project(
         if logger:
             logger.error(f"Error processing {project_name}: {e}")
         return False
+
+    # delete input
+    if delete_input:
+        logger.info(f"WARNING: Deleting input data for project {project_name} is activated!")
+        if all([inference_complete, footprints_complete]):
+            if logger:
+                logger.info("Processing successful.")
+                logger.info(f"Deleting input data for project: {project_name}")
+            try:
+                # logger.info("Deletion not activated yet!")
+                shutil.rmtree(data_dir / project_name)
+                if logger:
+                    logger.info(
+                        f"Successfully deleted input data for project: {project_name}"
+                    )
+            except Exception as e:
+                if logger:
+                    logger.error(f"Error deleting input data for {project_name}: {e}")
+        else:
+            logger.info("Deleting input data is activated, but processing failed! \nInput data are NOT deleted! ")
+    else:
+        logger.info("Deleting input data is deactivated!")
+    
     return True
 
 
@@ -100,6 +131,7 @@ def main(
     logfile: Path = typer.Option(
         Path("logs/app.log"), help="Path to the log file (optional)"
     ),
+    delete_input: Annotated[bool, typer.Option("--delete-input")] = False,
 ):
     data_dir = basedir_data
     dirlist = list(data_dir.glob("*"))
@@ -109,11 +141,13 @@ def main(
         projects_run = projects_to_run
     else:
         # Check if dir exists
-        projects_run = [p for p in projects if not (output_dir / model.stem / p).exists()]
+        projects_run = [
+            p for p in projects if not (output_dir / model.stem / p).exists()
+        ]
         # Then, apply the filter_startswith if it's not None
         if filter_startswith is not None:
             projects_run = [p for p in projects_run if p.startswith(filter_startswith)]
-    
+
     # Filter to fixed number of projects
     if n_datasets is not None:
         projects_run = projects_run[:n_datasets]
@@ -123,7 +157,9 @@ def main(
 
     # Add file handler to logger
     file_handler = logging.FileHandler(logfile)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
     logger.addHandler(file_handler)
 
     Parallel(n_jobs=n_jobs)(
@@ -138,7 +174,8 @@ def main(
             vector_suffix,
             image_size,
             classes,
-            logger=logger,  # Add classes parameter
+            logger=logger,
+            delete_input=delete_input,    # Add classes parameter
         )
         for project in tqdm(projects_run)
     )
