@@ -135,7 +135,7 @@ def main(
 ):
     data_dir = basedir_data
     dirlist = list(data_dir.glob("*"))
-    projects = [d.name for d in dirlist if d.is_dir()]
+    projects = [d.name for d in dirlist if d.is_dir()].sort()
 
     if projects_to_run:
         projects_run = projects_to_run
