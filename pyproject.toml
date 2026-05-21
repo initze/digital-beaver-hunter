@@ -6,10 +6,10 @@ authors = [
     { name = "initze", email = "ingmarnitze@gmail.com" }
 ]
 dependencies = [
-    "ultralytics",
-    "torch",
-    "torchvision",
-    "torchaudio",
+    # "ultralytics",
+    # "torch",
+    # "torchvision",
+    # "torchaudio",
     "setuptools",
     "wheel",
     "numpy",
@@ -32,6 +32,12 @@ dependencies = [
     "polars>=1.40.1",
     "folium>=0.19.4",
     "mapclassify>=2.10.0",
+    "ultralytics[extra]>=8.4.51",
+    # "ray[tune]>=2.55.1",
+    # "optuna>=4.8.0",
+    "torch>=2.10.0",
+    "nvidia-nccl-cu12>=2.27.5",
+    "ruff>=0.15.13",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"

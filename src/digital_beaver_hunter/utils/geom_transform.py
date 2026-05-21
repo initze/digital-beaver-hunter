@@ -2,10 +2,12 @@ from typing import Sequence, Tuple
 import numpy as np
 from shapely.geometry import Polygon
 
+
 def get_polygon_corners(poly: Polygon):
     coords = list(poly.exterior.coords)[:-1]  # drop the repeated first point
     # assume order is ul, ur, lr, ll or similar; you may need to sort by your convention
-    return np.array(coords)[:,:2]  # shape (4, 2): [E, N]
+    return np.array(coords)[:, :2]  # shape (4, 2): [E, N]
+
 
 def _wrap_360(angle_deg: np.ndarray) -> np.ndarray:
     """Wrap angles to the interval [0, 360)."""

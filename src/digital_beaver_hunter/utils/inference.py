@@ -13,6 +13,7 @@ from digital_beaver_hunter.utils.results import get_class_counts, get_results
 # Create a logger instance at the module level
 logger = logging.getLogger(__name__)
 
+
 def run_inference(
     data_dir: str,
     name: str,
@@ -22,7 +23,7 @@ def run_inference(
     imgsz: int = 2000,
     device: int = 0,
     classes: list = None,
-    logger: Optional[logging.Logger] = None
+    logger: Optional[logging.Logger] = None,
 ) -> bool:
     """
     Run YOLO inference on a set of images and save the results.
@@ -80,13 +81,20 @@ def run_inference(
     if logger:
         logger.info(f"Loading model: {model_path.stem}")
     model = YOLO(model_path)
-    
+
     # run prediction
     reslist = []
     for image in tqdm(image_list):
-        result = model(source=image, conf=confidence, verbose=False, imgsz=imgsz, device=device, classes=classes)[0]
+        result = model(
+            source=image,
+            conf=confidence,
+            verbose=False,
+            imgsz=imgsz,
+            device=device,
+            classes=classes,
+        )[0]
         reslist.append(pd.DataFrame(get_results(result)))
-    
+
     df_output = pd.concat(reslist).reset_index()
 
     df_class_count = get_class_counts(df_output, image_list=image_list)
@@ -98,7 +106,15 @@ def run_inference(
     processed_images = 0
     for image in tqdm(inference_images[:]):
         try:
-            results = model(source=image, conf=confidence, imgsz=imgsz, save=True, device=device, verbose=False, classes=classes)
+            results = model(
+                source=image,
+                conf=confidence,
+                imgsz=imgsz,
+                save=True,
+                device=device,
+                verbose=False,
+                classes=classes,
+            )
             processed_images += 1
         except Exception as e:
             if logger:
