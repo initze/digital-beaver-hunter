@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from shapely.geometry import Point, Polygon
+import geopandas as gpd
+from tqdm import tqdm
 
 
 def validate_sides(coords):
@@ -117,3 +119,58 @@ def set_footprint(row):
     # coords_new = manual_sort(coords, yaw=yaw)
     coords_new = correct_coords(coords, yaw=yaw)
     return Polygon(coords_new)
+
+
+def get_unique_footprints(
+    geodataframe: gpd.GeoDataFrame, buffer: float, crs: str | int
+) -> gpd.GeoDataFrame:
+    """
+    Remove overlapping geometries from a GeoDataFrame by buffering and intersection checks.
+
+    This function identifies and removes geometries that spatially overlap with others.
+    Each geometry is buffered by half the specified buffer distance, and any intersecting
+    geometries are considered duplicates and removed. The operation is performed in a
+    projected CRS to ensure meaningful distance-based buffering.
+
+    Parameters
+    ----------
+    geodataframe : geopandas.GeoDataFrame
+        Input GeoDataFrame containing polygon geometries (e.g., building footprints).
+    buffer : float
+        Buffer distance (in CRS units). Each geometry is expanded by buffer/2 before
+        intersection checks. set negative value (e.g. -100) for slight overlap
+    crs : str or int
+        Target coordinate reference system used for buffering and spatial operations.
+        Should be a projected CRS (e.g., EPSG:32608) for accurate distance calculations.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        A subset of the original GeoDataFrame with overlapping geometries removed.
+        The original CRS and geometry definitions are preserved.
+
+    Notes
+    -----
+    - The algorithm is order-dependent: earlier geometries are kept, and later
+      intersecting ones are removed.
+    - Performance is O(n^2) due to pairwise intersection checks and may be slow
+      for large datasets.
+    - The function does not modify the input GeoDataFrame in place.
+
+    Example
+    -------
+    >>> unique_gdf = get_unique_footprints(gdf, buffer=-100, crs=32608)
+    """
+    geodataframe_process = geodataframe.to_crs(crs)
+    geodataframe_process["geometry"] = geodataframe_process.buffer(buffer / 2)
+    idx = geodataframe.index
+    drop_idx = []
+    for i in tqdm(idx[:]):
+        if i in drop_idx:
+            continue
+        row = geodataframe_process.loc[i]
+        tmp = geodataframe_process.drop(index=i)
+        out = tmp.geometry.apply(lambda x: row.geometry.intersects(x))
+        drop_idx.extend(list(out[out].index.values))
+    unique = geodataframe.drop(index=drop_idx)
+    return unique
