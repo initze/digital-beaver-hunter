@@ -79,7 +79,9 @@ def run_project(
 
     # delete input
     if delete_input:
-        logger.info(f"WARNING: Deleting input data for project {project_name} is activated!")
+        logger.info(
+            f"WARNING: Deleting input data for project {project_name} is activated!"
+        )
         if all([inference_complete, footprints_complete]):
             if logger:
                 logger.info("Processing successful.")
@@ -95,10 +97,12 @@ def run_project(
                 if logger:
                     logger.error(f"Error deleting input data for {project_name}: {e}")
         else:
-            logger.info("Deleting input data is activated, but processing failed! \nInput data are NOT deleted! ")
+            logger.info(
+                "Deleting input data is activated, but processing failed! \nInput data are NOT deleted! "
+            )
     else:
         logger.info("Deleting input data is deactivated!")
-    
+
     return True
 
 
@@ -135,9 +139,9 @@ def main(
 ):
     data_dir = basedir_data
     dirlist = list(data_dir.glob("*"))
-    
+
     projects = [d.name for d in dirlist if d.is_dir()]
-    
+
     # sort project list
     projects.sort()
 
@@ -179,7 +183,7 @@ def main(
             image_size,
             classes,
             logger=logger,
-            delete_input=delete_input,    # Add classes parameter
+            delete_input=delete_input,  # Add classes parameter
         )
         for project in tqdm(projects_run)
     )

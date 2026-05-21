@@ -4,8 +4,12 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from digital_beaver_hunter.utils.geo import get_global_coords_from_yolo_output, get_best_utm_epsg
+from digital_beaver_hunter.utils.geo import (
+    get_global_coords_from_yolo_output,
+    get_best_utm_epsg,
+)
 from digital_beaver_hunter.utils.geom import set_footprint
+
 
 def process_stats_footprints(
     name: str, data_dir: str, base_dir_vectors: str, vector_suffix: str
@@ -88,13 +92,17 @@ def process_stats_footprints(
     epsg = get_best_utm_epsg(gdf)
     # filter to relevant footprints
     gdf_filtered_projected = gdf[gdf["image_id"].isin(image_ids)].to_crs(epsg)
-    gdf_filtered_projected['geometry'] = gdf_filtered_projected.apply(lambda row: set_footprint(row), axis=1)
+    gdf_filtered_projected["geometry"] = gdf_filtered_projected.apply(
+        lambda row: set_footprint(row), axis=1
+    )
     # convert local to global coords
     global_geoms = []
     error_features = []
     for i, row in df_features.iterrows():
         try:
-            global_geoms.append(get_global_coords_from_yolo_output(row, gdf_filtered_projected))
+            global_geoms.append(
+                get_global_coords_from_yolo_output(row, gdf_filtered_projected)
+            )
         except:
             print(f"Error in row {i}")
             error_features.append(i)

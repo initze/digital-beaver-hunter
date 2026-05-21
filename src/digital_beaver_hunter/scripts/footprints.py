@@ -1,4 +1,3 @@
-
 import typer
 
 from digital_beaver_hunter.utils.postprocessing import process_stats_footprints

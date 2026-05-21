@@ -1,24 +1,20 @@
 [project]
 name = "digital-beaver-hunter"
-version = "0.1.1"
-description = "Add your description here"
+version = "0.2.0"
+description = "Beaver detection model suite using ultralytics"
 authors = [
     { name = "initze", email = "ingmarnitze@gmail.com" }
 ]
 dependencies = [
-    "ultralytics",
-    "torch",
-    "torchvision",
-    "torchaudio",
     "setuptools",
     "wheel",
-    "numpy",
+    # "numpy",
     "opencv-python",
     "Pillow",
     "pyyaml",
     "requests",
     # "scipy",
-    "tqdm",
+    # "tqdm",
     "joblib>=1.4.2",
     "geopandas>=1.0.1",
     "leafmap>=0.42.11",
@@ -27,7 +23,20 @@ dependencies = [
     "ipykernel>=6.29.5",
     "jupyterlab>=4.3.5",
     "typer-config>=1.4.2",
-    "wandb>=0.20.1",
+    # "wandb",
+    "geoparquet-io>=1.1.1",
+    "polars>=1.40.1",
+    "folium>=0.19.4",
+    "mapclassify>=2.10.0",
+    "ultralytics[extra]>=8.4.51",
+    # "ray[tune]>=2.55.1",
+    # "optuna>=4.8.0",
+    "torch>=2.10.0",
+    "nvidia-nccl-cu12>=2.27.5",
+    "ruff>=0.15.13",
+    "wandb>=0.27.0",
+    "tqdm>=4.67.3",
+    "numpy>=2.4.6",
 ]
 readme = "README.md"
 requires-python = ">= 3.11"
