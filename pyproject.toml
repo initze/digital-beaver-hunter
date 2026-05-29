@@ -5,6 +5,7 @@ description = "Beaver detection model suite using ultralytics"
 authors = [
     { name = "initze", email = "ingmarnitze@gmail.com" }
 ]
+requires-python = ">=3.12"
 dependencies = [
     "setuptools",
     "wheel",
@@ -31,13 +32,24 @@ dependencies = [
     "ultralytics[extra]>=8.4.51",
     # "ray[tune]>=2.55.1",
     # "optuna>=4.8.0",
-    "torch>=2.10.0",
-    "nvidia-nccl-cu12>=2.27.5",
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+    # "torchaudio==2.11.0",
+    # "nvidia-nccl-cu12>=2.27.5",
     "ruff>=0.15.13",
     "wandb>=0.27.0",
     "tqdm>=4.67.3",
     "numpy>=2.4.6",
+    # "nvidia-cudnn-cu12>=9.22.0.52",
+    "hf>=1.17.0",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cu121"
+url = "https://download.pytorch.org/whl/cu121"
+explicit = true
+
+
 readme = "README.md"
 requires-python = ">= 3.11"
 
