@@ -6,16 +6,14 @@ authors = [
     { name = "initze", email = "ingmarnitze@gmail.com" }
 ]
 requires-python = ">=3.12"
+readme = "README.md"
 dependencies = [
     "setuptools",
     "wheel",
-    # "numpy",
     "opencv-python",
     "Pillow",
     "pyyaml",
     "requests",
-    # "scipy",
-    # "tqdm",
     "joblib>=1.4.2",
     "geopandas>=1.0.1",
     "leafmap>=0.42.11",
@@ -24,38 +22,93 @@ dependencies = [
     "ipykernel>=6.29.5",
     "jupyterlab>=4.3.5",
     "typer-config>=1.4.2",
-    # "wandb",
     "geoparquet-io>=1.1.1",
     "polars>=1.40.1",
     "folium>=0.19.4",
     "mapclassify>=2.10.0",
     "ultralytics[extra]>=8.4.51",
-    # "ray[tune]>=2.55.1",
-    # "optuna>=4.8.0",
-    "torch==2.5.1",
-    "torchvision==0.20.1",
-    # "torchaudio==2.11.0",
-    # "nvidia-nccl-cu12>=2.27.5",
-    "ruff>=0.15.13",
     "wandb>=0.27.0",
     "tqdm>=4.67.3",
     "numpy>=2.4.6",
-    # "nvidia-cudnn-cu12>=9.22.0.52",
     "hf>=1.17.0",
 ]
+
+[project.optional-dependencies]
+cpu = [
+    "torch>=2.2.0",
+    "torchvision>=0.20.0,<0.24.0",
+]
+cuda121 = [
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+]
+cuda124 = [
+    "torch==2.5.1",
+    "torchvision==0.20.1",
+]
+cuda126 = [
+    "torch==2.6.0",
+    "torchvision==0.21.0",
+]
+cuda128 = [
+    "torch>=2.2.0",
+    "torchvision>=0.21.0,<0.24.0",
+]
+
+[tool.uv]
+conflicts = [
+    [{ extra = "cpu" }, { extra = "cuda121" }],
+    [{ extra = "cpu" }, { extra = "cuda124" }],
+    [{ extra = "cpu" }, { extra = "cuda126" }],
+    [{ extra = "cpu" }, { extra = "cuda128" }],
+    [{ extra = "cuda121" }, { extra = "cuda124" }],
+    [{ extra = "cuda121" }, { extra = "cuda126" }],
+    [{ extra = "cuda121" }, { extra = "cuda128" }],
+    [{ extra = "cuda124" }, { extra = "cuda126" }],
+    [{ extra = "cuda124" }, { extra = "cuda128" }],
+    [{ extra = "cuda126" }, { extra = "cuda128" }],
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu121", extra = "cuda121" },
+    { index = "pytorch-cu124", extra = "cuda124" },
+    { index = "pytorch-cu126", extra = "cuda126" },
+    { index = "pytorch-cu128", extra = "cuda128" },
+]
+torchvision = [
+    { index = "pytorch-cpu", extra = "cpu" },
+    { index = "pytorch-cu121", extra = "cuda121" },
+    { index = "pytorch-cu124", extra = "cuda124" },
+    { index = "pytorch-cu126", extra = "cuda126" },
+    { index = "pytorch-cu128", extra = "cuda128" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [[tool.uv.index]]
 name = "pytorch-cu121"
 url = "https://download.pytorch.org/whl/cu121"
 explicit = true
 
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
 
-readme = "README.md"
-requires-python = ">= 3.11"
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
 
 [tool.rye]
 managed = true
