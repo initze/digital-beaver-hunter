@@ -29,7 +29,7 @@ dependencies = [
     "ultralytics[extra]>=8.4.51",
     "wandb>=0.27.0",
     "tqdm>=4.67.3",
-    "numpy>=2.4.6",
+    "numpy>=2",
     "hf>=1.17.0",
     "huggingface-hub>=1.17.0",
 ]
