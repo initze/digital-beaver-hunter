@@ -8,6 +8,8 @@ import pandas as pd
 from ultralytics import YOLO
 from tqdm import tqdm
 
+from huggingface_hub import hf_hub_download
+
 from digital_beaver_hunter.utils.results import get_class_counts, get_results
 
 # Create a logger instance at the module level
@@ -15,11 +17,11 @@ logger = logging.getLogger(__name__)
 
 
 def run_inference(
-    data_dir: str,
+    data_dir: Path,
     name: str,
     confidence: float,
-    model: str,
-    output_dir: str,
+    model: Path,
+    output_dir: Path,
     imgsz: int = 2000,
     device: int = 0,
     classes: list = None,
@@ -35,7 +37,7 @@ def run_inference(
     data_dir (str): Directory containing the input images.
     name (str): Name of the project or dataset.
     confidence (float): Confidence threshold for object detection.
-    model (str): Path to the YOLO model file.
+    model (str): Path to the YOLO model file. Can be local or a Hugging Face model URL.
     output_dir (str): Directory to save the output files.
     imgsz (int, optional): Input image size for the model. Defaults to 2000.
     device (int, optional): cuda device for inference
@@ -75,7 +77,20 @@ def run_inference(
     if logger:
         logger.info(f"Total images to process: {len(image_list)}")
 
-    model_path = model
+    if str(model).startswith("http"):
+        # Download the specific file
+        weight_path = hf_hub_download(
+            repo_id="ingmarnitze/digital-beaver-hunter",
+            filename="weights/best.pt",
+            repo_type="model"
+        )
+        model_path = weight_path
+    
+    elif model.is_file():
+        model_path = model
+        
+    else:
+        raise ValueError(f"Model path is invalid: {model}")
 
     # setup model
     if logger:
@@ -128,7 +143,7 @@ def run_inference(
 
     # check if reports dir exists
     if not save_dir.exists():
-        os.makedirs(save_dir)
+        save_dir.mkdir(parents=True, exist_ok=True)
 
     # Save outputs
     df_output.to_html(save_dir / "detected_features.html")

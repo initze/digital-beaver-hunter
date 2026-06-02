@@ -113,7 +113,7 @@ def main(
     model: Path = typer.Option(..., help="Path to the model file"),
     n_jobs: int = typer.Option(8, help="Number of parallel jobs"),
     device: int = typer.Option(6, help="Device number for inference"),
-    basedir_vectors: str = typer.Option(..., help="Base directory for vector files"),
+    basedir_vectors: Path = typer.Option(..., help="Base directory for vector files"),
     vector_suffix: str = typer.Option(
         "footprints_full.shp", help="Suffix for vector files"
     ),
