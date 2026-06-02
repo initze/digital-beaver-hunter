@@ -47,12 +47,12 @@ cuda124 = [
     "torchvision==0.20.1",
 ]
 cuda126 = [
-    "torch==2.6.0",
-    "torchvision==0.21.0",
+    "torch==2.11.0",
+    "torchvision==0.26.0",
 ]
 cuda128 = [
-    "torch>=2.2.0",
-    "torchvision>=0.21.0,<0.24.0",
+    "torch==2.11.0",
+    "torchvision==0.26.0",
 ]
 
 [tool.uv]
