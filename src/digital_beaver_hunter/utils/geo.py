@@ -1,8 +1,6 @@
-from math import cos, radians, sin
 
 import numpy as np
 from shapely.geometry import Polygon
-from digital_beaver_hunter.utils.geom import sort_vertices
 
 
 def yolo_to_projected_polygon(image_coords, yolo_coords):
