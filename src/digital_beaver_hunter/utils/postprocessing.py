@@ -5,10 +5,11 @@ import numpy as np
 import pandas as pd
 
 from digital_beaver_hunter.utils.geo import (
-    get_global_coords_from_yolo_output,
     get_best_utm_epsg,
+    get_global_coords_from_yolo_output,
 )
 from digital_beaver_hunter.utils.geom import set_footprint
+from digital_beaver_hunter.utils.geom_transform import yolo_to_projected_polygon
 
 
 def process_stats_footprints(
@@ -116,5 +117,132 @@ def process_stats_footprints(
 
     features_outfile = save_dir / (ds_name + "_feature_locations.gpkg")
     gdf_features.to_file(features_outfile)
+
+    return True
+
+
+def process_stats_footprints_v2(
+    name: str,
+    data_dir: str,
+    base_dir_vectors: str,
+    vector_suffix: str,
+    output_dir: str = None,
+    dry_run=False,
+):
+    """
+    Process statistics and footprints for a dataset, combining YOLO detection results with vector data.
+
+    This function loads YOLO detection results, combines them with vector footprints,
+    and produces various output files including vector data with detection statistics
+    and individual feature locations.
+
+    Parameters:
+    name (str): Name of the dataset.
+    data_dir (str): Directory containing the detection results.
+    base_dir_vectors (str): Base directory for vector files.
+    vector_suffix (str): Suffix for vector files.
+
+    Returns:
+    None
+
+    Outputs:
+    - A GeoPackage file with vector footprints and detection statistics.
+    - A GeoPackage file with centroids of the above.
+    - A GeoPackage file with individual feature locations in WGS84 (EPSG:4326).
+
+    Notes:
+    - Assumes detection results are stored in CSV files in the data_dir.
+    - Vector files are expected to have either a 'Basename' or 'Name' column.
+    - The function performs coordinate transformations and joins between vector and detection data.
+    - Output files are saved in the same directory as the input detection results.
+    """
+    # setup paths
+    ds_name = name
+    input_dir = Path(data_dir) / ds_name
+
+    if output_dir:
+        save_dir = Path(output_dir) / ds_name
+    else:
+        save_dir = Path(data_dir) / ds_name
+
+    # load inference results
+
+    # class counts
+    df_class_count = pd.read_csv(input_dir / "detected_image_summary.csv")
+    # single features
+    if not (input_dir / "detected_features.csv").exists():
+        print(f"Project {name} does not have any detected_features")
+        return 1
+    print((input_dir / "detected_features.csv").exists())
+    df_features = pd.read_csv(input_dir / "detected_features.csv")
+
+    # load vectors
+    vector_dir = Path(base_dir_vectors)
+    vector_file = vector_dir / ds_name / f"{ds_name}_{vector_suffix}"
+    gdf_footprints = gpd.read_file(vector_file)
+
+    # guess best UTM CRS
+    crs = gdf_footprints.estimate_utm_crs()
+
+    # extract basename
+    if "Basename" in gdf_footprints.columns:
+        gdf_footprints["image_id"] = gdf_footprints["Basename"].str.replace(".macs", "")
+    elif "Name" in gdf_footprints.columns:
+        gdf_footprints["image_id"] = gdf_footprints["Name"].str.replace(".macs", "")
+    # join (left)
+    joined = gdf_footprints.set_index("image_id").join(
+        df_class_count.set_index("image_id")
+    )
+
+    # setup output columns
+    cols = list(df_class_count.columns.values)
+    cols.append("geometry")
+
+    gdf_out = joined.reset_index(drop=False)[cols].replace(np.nan, 0)
+
+    # save files
+    outfile = save_dir / (ds_name + "_vector.gpkg")
+
+    if not dry_run:
+        outfile.parent.mkdir(parents=True, exist_ok=True)
+        gdf_out.to_file(outfile)
+
+    # calculate centroids and save
+    gdf_out_centroid = gdf_out.copy()
+    gdf_out_centroid["geometry"] = gdf_out.centroid
+    outfile_centroid = save_dir / (ds_name + "_vector_centroid.gpkg")
+    print(outfile_centroid)
+
+    if not dry_run:
+        outfile_centroid.parent.mkdir(parents=True, exist_ok=True)
+        gdf_out_centroid.to_file(outfile_centroid)
+
+    # make local boxes
+
+    gdf_footprints_utm = gdf_footprints.to_crs(crs)
+
+    # run loop over all images
+    results_list = []
+    for index, row_result in df_features.iterrows():
+        row_footprint = gdf_footprints_utm[
+            gdf_footprints_utm["Name"].str.rstrip(".macs") == row_result["image_id"]
+        ].iloc[0]
+        geom = yolo_to_projected_polygon(row_result, row_footprint)
+        row_result["geometry"] = geom
+        results_list.append(row_result)
+    gdf_features = (
+        gpd.GeoDataFrame(
+            pd.concat(results_list, axis=1).T, geometry="geometry", crs=crs
+        )
+        .drop(columns="index")
+        .to_crs(4326)
+    )
+
+    features_outfile = save_dir / (ds_name + "_feature_locations.gpkg")
+
+    # save to file
+    if not dry_run:
+        features_outfile.parent.mkdir(parents=True, exist_ok=True)
+        gdf_features.to_file(features_outfile)
 
     return True

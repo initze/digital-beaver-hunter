@@ -227,3 +227,35 @@ def make_footprint_polygon(
         return quad, rect
 
     return quad
+
+
+def yolo_to_projected_polygon(yolo_output, row_image_footprint):
+    """ """
+    image_corners = get_polygon_corners(row_image_footprint.geometry)
+    yaw = row_image_footprint["Yaw[deg]"]
+    image_corners_sorted = sort_corners_by_flight(image_corners, yaw_deg=yaw)
+
+    # Extract YOLO coordinates (normalized)
+    x_center, y_center, width, height = (
+        yolo_output.x,
+        yolo_output.y,
+        yolo_output.width,
+        yolo_output.height,
+    )
+
+    # Calculate the corners of the YOLO box in normalized coordinates
+    x_min = x_center - width / 2
+    y_min = y_center - height / 2
+    x_max = x_center + width / 2
+    y_max = y_center + height / 2
+
+    # Calculate the projected coordinates of the YOLO box
+    ul = rel_to_proj(x_min, y_max, image_corners_sorted)
+    ur = rel_to_proj(x_max, y_max, image_corners_sorted)
+    lr = rel_to_proj(x_max, y_min, image_corners_sorted)
+    ll = rel_to_proj(x_min, y_min, image_corners_sorted)
+
+    # Create a polygon from these coordinates
+    polygon = Polygon([tuple(ll), tuple(ul), tuple(ur), tuple(lr)])
+
+    return polygon

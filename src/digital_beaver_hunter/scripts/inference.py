@@ -11,7 +11,7 @@ from typer_config.decorators import use_yaml_config
 from typing_extensions import Annotated
 
 from digital_beaver_hunter.utils.inference import run_inference
-from digital_beaver_hunter.utils.postprocessing import process_stats_footprints
+from digital_beaver_hunter.utils.postprocessing import process_stats_footprints_v2
 
 app = typer.Typer()
 
@@ -64,7 +64,7 @@ def run_project(
             logger.info(
                 f"Processing stats and documentation for project: {project_name}"
             )
-        footprints_complete = process_stats_footprints(
+        footprints_complete = process_stats_footprints_v2(
             name=project_name,
             data_dir=output_dir,
             base_dir_vectors=basedir_vectors,
