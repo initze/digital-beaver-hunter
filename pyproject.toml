@@ -1,6 +1,7 @@
 [project]
 name = "digital-beaver-hunter"
 version = "0.4.0"
+
 description = "Beaver detection model suite using ultralytics"
 authors = [
     { name = "initze", email = "ingmarnitze@gmail.com" }
