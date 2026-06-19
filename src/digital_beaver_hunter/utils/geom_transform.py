@@ -230,15 +230,18 @@ def make_footprint_polygon(
 
 
 def yolo_to_projected_polygon(yolo_output, row_image_footprint):
-    """
-    """
+    """ """
     image_corners = get_polygon_corners(row_image_footprint.geometry)
-    yaw = row_image_footprint['Yaw[deg]']
+    yaw = row_image_footprint["Yaw[deg]"]
     image_corners_sorted = sort_corners_by_flight(image_corners, yaw_deg=yaw)
 
     # Extract YOLO coordinates (normalized)
-    x_center, y_center, width, height = yolo_output.x, yolo_output.y, yolo_output.width, yolo_output.height
-    
+    x_center, y_center, width, height = (
+        yolo_output.x,
+        yolo_output.y,
+        yolo_output.width,
+        yolo_output.height,
+    )
 
     # Calculate the corners of the YOLO box in normalized coordinates
     x_min = x_center - width / 2
@@ -253,8 +256,6 @@ def yolo_to_projected_polygon(yolo_output, row_image_footprint):
     ll = rel_to_proj(x_min, y_min, image_corners_sorted)
 
     # Create a polygon from these coordinates
-    polygon = Polygon(
-        [tuple(ll), tuple(ul), tuple(ur), tuple(lr)]
-    )
+    polygon = Polygon([tuple(ll), tuple(ul), tuple(ur), tuple(lr)])
 
-    return polygon  
+    return polygon
